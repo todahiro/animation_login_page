@@ -28,13 +28,16 @@ class AnimationLoginPage extends StatefulWidget {
 
 class _AnimationLoginPageState extends State<AnimationLoginPage>
     with TickerProviderStateMixin {
-  AnimationController _loginIdAnimationController;
-  AnimationController _passwordAnimationController;
-  AnimationController _buttonAnimationController;
+  AnimationController? _loginIdAnimationController;
+  AnimationController? _passwordAnimationController;
+  AnimationController? _buttonAnimationController;
 
-  Animation<Offset> _loginIdAnimation;
-  Animation<Offset> _passwordAnimation;
-  Animation<double> _buttonAnimation;
+  Animation<double>? _loginIdAnimation;
+  Animation<double>? _passwordAnimation;
+  Animation<double>? _buttonAnimation;
+
+  final globalKey = GlobalKey();
+  double formWidth = 0;
 
   @override
   void initState() {
@@ -55,44 +58,37 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
       vsync: this,
     );
 
-    Animatable _animatable = Tween<Offset>(
-      begin: Offset(-1.1, 0.0),
-      end: Offset(0.0, 0.0),
+    final Animatable<double> _animatable = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
     ).chain(
       CurveTween(
         curve: Curves.bounceOut,
       ),
     );
 
-    _loginIdAnimation = _animatable.animate(_loginIdAnimationController);
-    _passwordAnimation = _animatable.animate(_passwordAnimationController);
-    _buttonAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    )
-        .chain(
-          CurveTween(
-            curve: Curves.bounceOut,
-          ),
-        )
-        .animate(_buttonAnimationController);
+    _loginIdAnimation = _animatable.animate(_loginIdAnimationController!);
+    _passwordAnimation = _animatable.animate(_passwordAnimationController!);
+    _buttonAnimation = _animatable.animate(_buttonAnimationController!);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loginIdAnimationController.forward();
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+      RenderBox? box = globalKey.currentContext!.findRenderObject() as RenderBox;
+      formWidth = box.size.width;
+      _loginIdAnimationController!.forward();
       Future.delayed(Duration(milliseconds: 200)).then(
-            (_) => _passwordAnimationController.forward(),
+            (_) => _passwordAnimationController!.forward(),
       );
       Future.delayed(Duration(milliseconds: 700)).then(
-            (_) => _buttonAnimationController.forward(),
+            (_) => _buttonAnimationController!.forward(),
       );
     });
   }
 
   @override
   void dispose() {
-    _loginIdAnimationController.dispose();
-    _passwordAnimationController.dispose();
-    _buttonAnimationController.dispose();
+    _loginIdAnimationController!.dispose();
+    _passwordAnimationController!.dispose();
+    _buttonAnimationController!.dispose();
 
     super.dispose();
   }
@@ -132,11 +128,12 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
                     height: 50,
                   ),
                   AnimatedBuilder(
-                    animation: _loginIdAnimation,
+                    animation: _loginIdAnimation!,
                     builder: (BuildContext context, _) {
-                      return FractionalTranslation(
-                        translation: _loginIdAnimation.value,
+                      return Transform(
+                        transform: _generateFormMatrix(_loginIdAnimation!),
                         child: CupertinoTextField(
+                          key: globalKey,
                           placeholder: 'id',
                         ),
                       );
@@ -146,10 +143,10 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
                     height: 20,
                   ),
                   AnimatedBuilder(
-                    animation: _passwordAnimation,
+                    animation: _passwordAnimation!,
                     builder: (BuildContext context, _) {
-                      return FractionalTranslation(
-                        translation: _passwordAnimation.value,
+                      return Transform(
+                        transform: _generateFormMatrix(_passwordAnimation!),
                         child: CupertinoTextField(
                           placeholder: 'password',
                         ),
@@ -160,12 +157,12 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
                     height: 50,
                   ),
                   AnimatedBuilder(
-                    animation: _buttonAnimation,
+                    animation: _buttonAnimation!,
                     builder: (BuildContext context, _) {
                       return FadeTransition(
-                        opacity: _buttonAnimation,
+                        opacity: _buttonAnimation!,
                         child: Transform(
-                          transform: _generateMatrix(_buttonAnimation),
+                          transform: _generateButtonMatrix(_buttonAnimation!),
                           child: SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
@@ -188,8 +185,13 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
     );
   }
 
-  Matrix4 _generateMatrix(Animation animation) {
+  Matrix4 _generateFormMatrix(Animation animation) {
+    final value = lerpDouble(formWidth + 35.0, 0, animation.value);
+    return Matrix4.translationValues(-value!, 0.0, 0.0);
+  }
+
+  Matrix4 _generateButtonMatrix(Animation animation) {
     final value = lerpDouble(30.0, 0, animation.value);
-    return Matrix4.translationValues(0.0, value, 0.0);
+    return Matrix4.translationValues(0.0, value!, 0.0);
   }
 }
