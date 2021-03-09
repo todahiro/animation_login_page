@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 
 void main() {
   runApp(MyApp());
@@ -16,49 +17,30 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: AnimationLoginPage(),
+      home: _AnimationLoginPage(),
     );
   }
 }
 
-class AnimationLoginPage extends StatefulWidget {
-  @override
-  _AnimationLoginPageState createState() => _AnimationLoginPageState();
-}
-
-class _AnimationLoginPageState extends State<AnimationLoginPage>
-    with TickerProviderStateMixin {
-  AnimationController? _loginIdAnimationController;
-  AnimationController? _passwordAnimationController;
-  AnimationController? _buttonAnimationController;
-
-  Animation<double>? _loginIdAnimation;
-  Animation<double>? _passwordAnimation;
-  Animation<double>? _buttonAnimation;
-
+// ignore: must_be_immutable
+class _AnimationLoginPage extends HookWidget {
   final globalKey = GlobalKey();
   double formWidth = 0;
 
   @override
-  void initState() {
-    super.initState();
-
-    _loginIdAnimationController = AnimationController(
-      duration: Duration(milliseconds: 500),
-      vsync: this,
+  Widget build(BuildContext context) {
+    AnimationController _loginIdAnimationController = useAnimationController(
+      duration: Duration(milliseconds: 800),
+    );
+    AnimationController _passwordAnimationController = useAnimationController(
+      duration: Duration(milliseconds: 1200),
+    );
+    AnimationController _buttonAnimationController = useAnimationController(
+      duration: Duration(milliseconds: 600),
     );
 
-    _passwordAnimationController = AnimationController(
-      duration: Duration(milliseconds: 500),
-      vsync: this,
-    );
-
-    _buttonAnimationController = AnimationController(
-      duration: Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    final Animatable<double> _animatable = Tween<double>(
+    // ログインIDフォームとログインボタンのアニメーション
+    Animatable<double> _animatable = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).chain(
@@ -67,34 +49,51 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
       ),
     );
 
-    _loginIdAnimation = _animatable.animate(_loginIdAnimationController!);
-    _passwordAnimation = _animatable.animate(_passwordAnimationController!);
-    _buttonAnimation = _animatable.animate(_buttonAnimationController!);
+    // パスワードフォームのアニメーション
+    Animatable<double> _passwordAnimatable = TweenSequence([
+      // アニメーションが1.2秒で、最初の0.4秒は待機
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 0.0,
+        ),
+        weight: 400 / 1200,
+      ),
+      // アニメーションが1.2秒で、0.8秒かけてアニメーション
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(
+          CurveTween(
+            curve: Curves.bounceOut,
+          ),
+        ),
+        weight: 800 / 1200,
+      ),
+    ]);
+
+    Animation<double> _loginIdAnimation =
+        _animatable.animate(_loginIdAnimationController);
+    Animation<double> _passwordAnimation =
+        _passwordAnimatable.animate(_passwordAnimationController);
+    Animation<double> _buttonAnimation =
+        _animatable.animate(_buttonAnimationController);
 
     WidgetsBinding.instance?.addPostFrameCallback((_) {
-      RenderBox? box = globalKey.currentContext!.findRenderObject() as RenderBox;
-      formWidth = box.size.width;
-      _loginIdAnimationController!.forward();
-      Future.delayed(Duration(milliseconds: 200)).then(
-            (_) => _passwordAnimationController!.forward(),
-      );
-      Future.delayed(Duration(milliseconds: 700)).then(
-            (_) => _buttonAnimationController!.forward(),
+      // フォームのwidthを取得
+      RenderBox form =
+          globalKey.currentContext!.findRenderObject() as RenderBox;
+      formWidth = form.size.width;
+
+      // アニメーションの開始
+      _loginIdAnimationController.forward();
+      _passwordAnimationController.forward();
+      Future.delayed(Duration(milliseconds: 1000)).then(
+        (_) => _buttonAnimationController.forward(),
       );
     });
-  }
 
-  @override
-  void dispose() {
-    _loginIdAnimationController!.dispose();
-    _passwordAnimationController!.dispose();
-    _buttonAnimationController!.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -128,10 +127,10 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
                     height: 50,
                   ),
                   AnimatedBuilder(
-                    animation: _loginIdAnimation!,
+                    animation: _loginIdAnimation,
                     builder: (BuildContext context, _) {
                       return Transform(
-                        transform: _generateFormMatrix(_loginIdAnimation!),
+                        transform: _generateFormMatrix(_loginIdAnimation),
                         child: CupertinoTextField(
                           key: globalKey,
                           placeholder: 'id',
@@ -143,10 +142,10 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
                     height: 20,
                   ),
                   AnimatedBuilder(
-                    animation: _passwordAnimation!,
+                    animation: _passwordAnimation,
                     builder: (BuildContext context, _) {
                       return Transform(
-                        transform: _generateFormMatrix(_passwordAnimation!),
+                        transform: _generateFormMatrix(_passwordAnimation),
                         child: CupertinoTextField(
                           placeholder: 'password',
                         ),
@@ -157,12 +156,12 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
                     height: 50,
                   ),
                   AnimatedBuilder(
-                    animation: _buttonAnimation!,
+                    animation: _buttonAnimation,
                     builder: (BuildContext context, _) {
                       return FadeTransition(
-                        opacity: _buttonAnimation!,
+                        opacity: _buttonAnimation,
                         child: Transform(
-                          transform: _generateButtonMatrix(_buttonAnimation!),
+                          transform: _generateButtonMatrix(_buttonAnimation),
                           child: SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
@@ -185,11 +184,13 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
     );
   }
 
+  /// フォームのアニメーションの移動量
   Matrix4 _generateFormMatrix(Animation animation) {
     final value = lerpDouble(formWidth + 35.0, 0, animation.value);
     return Matrix4.translationValues(-value!, 0.0, 0.0);
   }
 
+  /// ボタンのアニメーションの移動量
   Matrix4 _generateButtonMatrix(Animation animation) {
     final value = lerpDouble(30.0, 0, animation.value);
     return Matrix4.translationValues(0.0, value!, 0.0);
