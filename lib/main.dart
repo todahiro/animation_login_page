@@ -186,13 +186,13 @@ class _AnimationLoginPage extends HookWidget {
     );
   }
 
-  /// フォームのアニメーションの移動量(画面左のPadding + フォームの長さ)
+  /// フォームがスライドするアニメーションの移動量(画面左のPadding(35px) + フォームの長さ)
   Matrix4 _generateFormMatrix(Animation animation) {
-    final value = lerpDouble(formWidth + 35.0, 0, animation.value);
+    final value = lerpDouble(35.0 + formWidth, 0, animation.value);
     return Matrix4.translationValues(-value!, 0.0, 0.0);
   }
 
-  /// ボタンのアニメーションの移動量(30px)
+  /// ボタンが上にスライドするアニメーションの移動量(30px)
   Matrix4 _generateButtonMatrix(Animation animation) {
     final value = lerpDouble(30.0, 0, animation.value);
     return Matrix4.translationValues(0.0, value!, 0.0);
