@@ -103,7 +103,7 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
       // アニメーションの開始
       _loginIdAnimationController!.forward();
       _passwordAnimationController!.forward();
-      // 10秒後にアニメーション開始
+      // 1秒後にアニメーション開始
       Future.delayed(Duration(milliseconds: 1000)).then(
             (_) => _buttonAnimationController!.forward(),
       );
