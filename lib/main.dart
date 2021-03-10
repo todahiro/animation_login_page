@@ -44,21 +44,22 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
     super.initState();
 
     _loginIdAnimationController = AnimationController(
-      duration: Duration(milliseconds: 500),
+      duration: Duration(milliseconds: 800),
       vsync: this,
     );
 
     _passwordAnimationController = AnimationController(
-      duration: Duration(milliseconds: 500),
+      duration: Duration(milliseconds: 1200),
       vsync: this,
     );
 
     _buttonAnimationController = AnimationController(
-      duration: Duration(milliseconds: 300),
+      duration: Duration(milliseconds: 600),
       vsync: this,
     );
 
-    final Animatable<double> _animatable = Tween<double>(
+    // ログインIDフォームとログインボタンのアニメーション定義
+    Animatable<double> _animatable = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).chain(
@@ -67,18 +68,43 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
       ),
     );
 
+    // パスワードフォームのアニメーション定義
+    Animatable<double> _passwordAnimatable = TweenSequence([
+      // アニメーションが1.2秒で、最初の0.4秒は待機
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 0.0,
+        ),
+        weight: 400 / 1200, // 1.2秒のアニメーションのうちの0.4秒
+      ),
+      // アニメーションが1.2秒で、0.8秒かけてアニメーション
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(
+          CurveTween(
+            curve: Curves.bounceOut,
+          ),
+        ),
+        weight: 800 / 1200, // 1.2秒のアニメーションのうちの0.8秒
+      ),
+    ]);
+
     _loginIdAnimation = _animatable.animate(_loginIdAnimationController!);
-    _passwordAnimation = _animatable.animate(_passwordAnimationController!);
+    _passwordAnimation = _passwordAnimatable.animate(_passwordAnimationController!);
     _buttonAnimation = _animatable.animate(_buttonAnimationController!);
 
+    // Widgetが描画されてから、フォームの長さを取得して、アニメーションを発火させる
     WidgetsBinding.instance?.addPostFrameCallback((_) {
       RenderBox? box = globalKey.currentContext!.findRenderObject() as RenderBox;
       formWidth = box.size.width;
+      // アニメーションの開始
       _loginIdAnimationController!.forward();
-      Future.delayed(Duration(milliseconds: 200)).then(
-            (_) => _passwordAnimationController!.forward(),
-      );
-      Future.delayed(Duration(milliseconds: 700)).then(
+      _passwordAnimationController!.forward();
+      // 10秒後にアニメーション開始
+      Future.delayed(Duration(milliseconds: 1000)).then(
             (_) => _buttonAnimationController!.forward(),
       );
     });
@@ -185,11 +211,13 @@ class _AnimationLoginPageState extends State<AnimationLoginPage>
     );
   }
 
+  /// フォームがスライドするアニメーションの移動量(画面左のPadding(35px) + フォームの長さ)
   Matrix4 _generateFormMatrix(Animation animation) {
-    final value = lerpDouble(formWidth + 35.0, 0, animation.value);
+    final value = lerpDouble(35.0 + formWidth, 0, animation.value);
     return Matrix4.translationValues(-value!, 0.0, 0.0);
   }
 
+  /// ボタンが上にスライドするアニメーションの移動量(30px)
   Matrix4 _generateButtonMatrix(Animation animation) {
     final value = lerpDouble(30.0, 0, animation.value);
     return Matrix4.translationValues(0.0, value!, 0.0);
