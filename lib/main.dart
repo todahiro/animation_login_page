@@ -39,7 +39,7 @@ class _AnimationLoginPage extends HookWidget {
       duration: Duration(milliseconds: 600),
     );
 
-    // ログインIDフォームとログインボタンのアニメーション
+    // ログインIDフォームとログインボタンのアニメーション定義
     Animatable<double> _animatable = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -49,7 +49,7 @@ class _AnimationLoginPage extends HookWidget {
       ),
     );
 
-    // パスワードフォームのアニメーション
+    // パスワードフォームのアニメーション定義
     Animatable<double> _passwordAnimatable = TweenSequence([
       // アニメーションが1.2秒で、最初の0.4秒は待機
       TweenSequenceItem(
@@ -57,7 +57,7 @@ class _AnimationLoginPage extends HookWidget {
           begin: 0.0,
           end: 0.0,
         ),
-        weight: 400 / 1200,
+        weight: 400 / 1200, // 1.2秒のアニメーションのうちの0.4秒
       ),
       // アニメーションが1.2秒で、0.8秒かけてアニメーション
       TweenSequenceItem(
@@ -69,7 +69,7 @@ class _AnimationLoginPage extends HookWidget {
             curve: Curves.bounceOut,
           ),
         ),
-        weight: 800 / 1200,
+        weight: 800 / 1200, // 1.2秒のアニメーションのうちの0.8秒
       ),
     ]);
 
@@ -80,6 +80,7 @@ class _AnimationLoginPage extends HookWidget {
     Animation<double> _buttonAnimation =
         _animatable.animate(_buttonAnimationController);
 
+    // Widgetが描画されてから、フォームの長さを取得して、アニメーションを発火させる
     WidgetsBinding.instance?.addPostFrameCallback((_) {
       // フォームのwidthを取得
       RenderBox form =
@@ -89,6 +90,7 @@ class _AnimationLoginPage extends HookWidget {
       // アニメーションの開始
       _loginIdAnimationController.forward();
       _passwordAnimationController.forward();
+      // 10秒後にアニメーション開始
       Future.delayed(Duration(milliseconds: 1000)).then(
         (_) => _buttonAnimationController.forward(),
       );
@@ -184,13 +186,13 @@ class _AnimationLoginPage extends HookWidget {
     );
   }
 
-  /// フォームのアニメーションの移動量
+  /// フォームのアニメーションの移動量(画面左のPadding + フォームの長さ)
   Matrix4 _generateFormMatrix(Animation animation) {
     final value = lerpDouble(formWidth + 35.0, 0, animation.value);
     return Matrix4.translationValues(-value!, 0.0, 0.0);
   }
 
-  /// ボタンのアニメーションの移動量
+  /// ボタンのアニメーションの移動量(30px)
   Matrix4 _generateButtonMatrix(Animation animation) {
     final value = lerpDouble(30.0, 0, animation.value);
     return Matrix4.translationValues(0.0, value!, 0.0);
